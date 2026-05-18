@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Agendamentos.Controllers
 {
@@ -22,30 +23,35 @@ namespace Agendamentos.Controllers
 
         public async Task<IActionResult> Index(string search)
         {
-            var users = _userManager.Users.ToList();
+            // Busca todos os usuários do banco
+            var query = _userManager.Users.AsQueryable();
 
+            // Se houver texto na busca, filtra de forma inteligente
             if (!string.IsNullOrEmpty(search))
             {
-                users = users
-                    .Where(u => u.Email.Contains(search))
-                    .ToList();
+                query = query.Where(u =>
+                    (u.FirstName != null && u.FirstName.Contains(search)) ||
+                    (u.LastName != null && u.LastName.Contains(search)) ||
+                    u.Email.Contains(search));
             }
 
-            var userList = new List<UserViewModel>();
+            var users = await query.ToListAsync();
+            var userViewModels = new List<UserViewModel>();
 
-            foreach (var user in users)
+            foreach (var u in users)
             {
-                var roles = await _userManager.GetRolesAsync(user);
-
-                userList.Add(new UserViewModel
+                var roles = await _userManager.GetRolesAsync(u);
+                userViewModels.Add(new UserViewModel
                 {
-                    Id = user.Id,
-                    Email = user.Email,
+                    Id = u.Id,
+                    Email = u.Email,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
                     IsAdmin = roles.Contains("Admin")
                 });
             }
 
-            return View(userList);
+            return View(userViewModels);
         }
 
         public async Task<IActionResult> ToggleAdmin(string id)
@@ -86,6 +92,38 @@ namespace Agendamentos.Controllers
             {
                 await _userManager.RemoveFromRoleAsync(user, "Cliente");
                 await _userManager.AddToRoleAsync(user, "Admin");
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteUser(string id)
+        {
+            if (!User.IsInRole("Admin"))
+                return Unauthorized();
+
+            var user = await _userManager.FindByIdAsync(id);
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (user == null)
+                return NotFound();
+
+            // Segurança máxima: Impedir o Admin de se autoexcluir
+            if (user.Id == currentUser.Id)
+            {
+                TempData["AvisoAdmin"] = "Você não pode excluir a sua própria conta de Administrador.";
+                return RedirectToAction("Index");
+            }
+
+            var result = await _userManager.DeleteAsync(user);
+            if (result.Succeeded)
+            {
+                TempData["SucessoAdmin"] = "Usuário excluído com sucesso do sistema.";
+            }
+            else
+            {
+                TempData["AvisoAdmin"] = "Ocorreu um erro ao tentar excluir o usuário.";
             }
 
             return RedirectToAction("Index");

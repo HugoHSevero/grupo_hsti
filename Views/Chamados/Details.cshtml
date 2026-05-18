@@ -32,8 +32,8 @@
         </h2>
         <span class="badge rounded-pill px-3 py-2 shadow-sm
             @(Model.Status == StatusChamado.Aberto ? "bg-secondary text-white" :
-                Model.Status == StatusChamado.EmAndamento ? "bg-warning text-dark" :
-                "bg-success text-white")">
+                    Model.Status == StatusChamado.EmAndamento ? "bg-warning text-dark" :
+                    "bg-success text-white")">
             @Html.DisplayFor(m => Model.Status)
         </span>
     </div>
@@ -118,18 +118,22 @@
                     </h6>
 
                     <ul class="list-unstyled mb-0">
-                        <li class="mb-3 d-flex align-items-start">
-                            <i class="bi bi-person-circle text-muted fs-5 me-3 mt-1"></i>
-                            <div>
-                                <small class="text-muted d-block fw-semibold">Solicitante</small>
-                                <span class="text-dark fw-medium">@(Model.Usuario?.Email ?? "Desconhecido")</span>
-                            </div>
-                        </li>
-                        <li class="mb-3 d-flex align-items-start">
-                            <i class="bi bi-tag text-muted fs-5 me-3 mt-1"></i>
-                            <div>
-                                <small class="text-muted d-block fw-semibold">Categoria</small>
-                                <span class="text-dark">@Model.Categoria</span>
+                        <li class="mb-3 pb-3 border-bottom">
+                            <span class="text-muted d-block small fw-bold text-uppercase mb-1">
+                                <i class="bi bi-person me-1"></i> Solicitante
+                            </span>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-circle fs-4 text-secondary me-2"></i>
+                                <div>
+                                    <span class="d-block text-dark fw-bold">
+                                        @(Model.Usuario != null && !string.IsNullOrEmpty(Model.Usuario.FirstName)
+                                            ? $"{Model.Usuario.FirstName} {Model.Usuario.LastName}"
+                                            : "Usuário Sem Nome")
+                                    </span>
+                                    <span class="d-block text-muted small">
+                                        @(Model.Usuario?.Email ?? "E-mail desconhecido")
+                                    </span>
+                                </div>
                             </div>
                         </li>
                         <li class="mb-3 d-flex align-items-start">
@@ -161,6 +165,20 @@
                         </div>
                     }
 
+                    <hr class="my-4 text-muted">
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <hr class="my-4 text-muted">
+                        <div class="pt-2">
+                            <form asp-action="Deletar" method="post"
+                                  onsubmit="return confirm('Deseja realmente apagar em definitivo este chamado e todo o histórico de conversas dele?');">
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <button type="submit" class="btn btn-outline-danger w-100 rounded-pill btn-sm fw-medium py-2">
+                                    <i class="bi bi-trash3 me-1"></i> Excluir este Chamado
+                                </button>
+                            </form>
+                        </div>
+                    }
                 </div>
             </div>
         </div>

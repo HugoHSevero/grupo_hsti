@@ -28,7 +28,8 @@ public class ChamadosController : Controller
     }
 
     // LISTA TODOS OS CHAMADOS
-    public async Task<IActionResult> Backlog(StatusChamado? status)
+    // LISTA TODOS OS CHAMADOS
+    public async Task<IActionResult> Backlog(StatusChamado? status, string search)
     {
         if (!User.IsInRole("Admin"))
             return Unauthorized();
@@ -37,15 +38,27 @@ public class ChamadosController : Controller
             .Include(c => c.Usuario)
             .AsQueryable();
 
+        // Filtro 1: Status
         if (status.HasValue)
         {
             chamados = chamados.Where(c => c.Status == status.Value);
         }
 
-        // 2. ADICIONADO AQUI: Ordena o resultado final do Backlog antes de mandar para a View
+        // Filtro 2: Busca por texto (Título do chamado ou Nome/Sobrenome do usuário)
+        if (!string.IsNullOrEmpty(search))
+        {
+            chamados = chamados.Where(c =>
+                c.Titulo.Contains(search) ||
+                (c.Usuario != null && c.Usuario.FirstName.Contains(search)) ||
+                (c.Usuario != null && c.Usuario.LastName.Contains(search))
+            );
+        }
+
+        // Passamos o texto de busca para a tela para a caixinha não ficar em branco após buscar
+        ViewData["CurrentSearch"] = search;
+
         return View(await chamados.OrderByDescending(c => c.DataCriacao).ToListAsync());
     }
-
     // CREATE (GET)
     public IActionResult Create()
     {
@@ -114,5 +127,34 @@ public class ChamadosController : Controller
         await _context.SaveChangesAsync();
 
         return RedirectToAction("Details", new { id = chamadoId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Deletar(int id)
+    {
+        // Segurança máxima: Se não for Admin, barra na hora
+        if (!User.IsInRole("Admin"))
+        {
+            return Unauthorized();
+        }
+
+        var chamado = await _context.Chamados
+            .Include(c => c.Mensagens)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (chamado == null)
+            return NotFound();
+
+        // Remove as mensagens atreladas antes de apagar o chamado
+        if (chamado.Mensagens != null && chamado.Mensagens.Any())
+        {
+            _context.MensagensChamado.RemoveRange(chamado.Mensagens);
+        }
+
+        _context.Chamados.Remove(chamado);
+        await _context.SaveChangesAsync();
+
+        // Como apenas admin apaga, sempre redireciona para o Backlog
+        return RedirectToAction("Backlog");
     }
 }

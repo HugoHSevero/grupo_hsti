@@ -19,27 +19,43 @@
         </ol>
     </nav>
 
-    <h2 class="mb-4 fw-bold text-dark">
-        <i class="bi bi-card-checklist text-primary me-2"></i>Backlog de Chamados
-    </h2>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <h2 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-card-checklist text-primary me-2"></i>Backlog de Chamados
+        </h2>
+
+        <form method="get" class="d-flex">
+            @if (Context.Request.Query.ContainsKey("status"))
+            {
+                <input type="hidden" name="status" value="@Context.Request.Query["status"]" />
+            }
+            <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Buscar título ou usuário..." value="@ViewData["CurrentSearch"]" />
+                <button type="submit" class="btn btn-primary px-4 fw-medium">Buscar</button>
+            </div>
+        </form>
+    </div>
 
     <div class="d-flex flex-wrap gap-2 mb-4">
-        <a asp-action="Backlog"
+        <a asp-action="Backlog" asp-route-search="@ViewData["CurrentSearch"]"
            class="btn rounded-pill px-4 shadow-sm fw-medium @(string.IsNullOrEmpty(currentStatus) ? "btn-primary" : "bg-white text-secondary border-0")">
             Todos
         </a>
 
-        <a asp-action="Backlog" asp-route-status="Aberto"
+        <a asp-action="Backlog" asp-route-status="Aberto" asp-route-search="@ViewData["CurrentSearch"]"
            class="btn rounded-pill px-4 shadow-sm fw-medium @(currentStatus == "Aberto" ? "btn-primary" : "bg-white text-secondary border-0")">
             Abertos
         </a>
 
-        <a asp-action="Backlog" asp-route-status="EmAndamento"
+        <a asp-action="Backlog" asp-route-status="EmAndamento" asp-route-search="@ViewData["CurrentSearch"]"
            class="btn rounded-pill px-4 shadow-sm fw-medium @(currentStatus == "EmAndamento" ? "btn-primary" : "bg-white text-secondary border-0")">
             Em andamento
         </a>
 
-        <a asp-action="Backlog" asp-route-status="Concluido"
+        <a asp-action="Backlog" asp-route-status="Concluido" asp-route-search="@ViewData["CurrentSearch"]"
            class="btn rounded-pill px-4 shadow-sm fw-medium @(currentStatus == "Concluido" ? "btn-primary" : "bg-white text-secondary border-0")">
             Concluídos
         </a>
@@ -80,8 +96,8 @@
                                 <td>
                                     <span class="badge rounded-pill px-3 py-2 shadow-sm
                                         @(item.Status == StatusChamado.Aberto ? "bg-secondary text-white" :
-                                          item.Status == StatusChamado.EmAndamento ? "bg-warning text-dark" :
-                                          "bg-success text-white")">
+                                            item.Status == StatusChamado.EmAndamento ? "bg-warning text-dark" :
+                                            "bg-success text-white")">
                                         @Html.DisplayFor(m => item.Status)
                                     </span>
                                 </td>
@@ -91,7 +107,10 @@
                                 </td>
 
                                 <td class="text-secondary">
-                                    <i class="bi bi-person text-muted me-1"></i> @(item.Usuario?.Email ?? "Desconhecido")
+                                    <i class="bi bi-person text-muted me-1"></i>
+                                    @(item.Usuario != null && !string.IsNullOrEmpty(item.Usuario.FirstName)
+                                        ? $"{item.Usuario.FirstName} {item.Usuario.LastName}"
+                                        : (item.Usuario?.Email ?? "Desconhecido"))
                                 </td>
 
                                 <td class="text-secondary">@item.DataCriacao.ToString("dd/MM/yyyy HH:mm")</td>

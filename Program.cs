@@ -53,14 +53,11 @@ app.MapRazorPages();
 
 using (var scope = app.Services.CreateScope())
 {
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    await DbInitializer.SeedRoles(roleManager);
-}
-
-using (var scope = app.Services.CreateScope())
-{
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.Migrate();
+    
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    await DbInitializer.SeedRoles(roleManager);
 }
 
 using (var scope = app.Services.CreateScope())
@@ -103,5 +100,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+Console.WriteLine("=== START APP ===");
+Console.WriteLine(builder.Configuration.GetConnectionString("DefaultConnection"));
 
 app.Run();

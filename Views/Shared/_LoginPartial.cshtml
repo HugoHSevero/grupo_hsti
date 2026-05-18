@@ -5,11 +5,7 @@
 <ul class="navbar-nav gap-2">
     @if (SignInManager.IsSignedIn(User))
     {
-        <li class="nav-item d-flex align-items-center">
-            <a class="nav-link text-secondary fw-medium" asp-area="Identity" asp-page="/Account/Manage/Index" title="Gerenciar Conta">
-                <i class="bi bi-person-circle text-primary me-1 fs-5 align-middle"></i> Olá, @User.Identity?.Name!
-            </a>
-        </li>
+
         <li class="nav-item d-flex align-items-center">
             <form class="form-inline m-0" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
                 <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold shadow-sm">

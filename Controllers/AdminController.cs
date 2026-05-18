@@ -9,9 +9,15 @@ namespace Agendamentos.Controllers
     public class AdminController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        public AdminController(UserManager<ApplicationUser> userManager)
+
+        // 1. Adicionamos o RoleManager aqui
+        private readonly RoleManager<IdentityRole> _roleManager;
+
+        // 2. Atualizamos o construtor para receber o RoleManager
+        public AdminController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             _userManager = userManager;
+            _roleManager = roleManager;
         }
 
         public async Task<IActionResult> Index(string search)
@@ -45,25 +51,40 @@ namespace Agendamentos.Controllers
         public async Task<IActionResult> ToggleAdmin(string id)
         {
             var user = await _userManager.FindByIdAsync(id);
-
             var currentUser = await _userManager.GetUserAsync(User);
 
             // Não pode remover o próprio admin
             if (user.Id == currentUser.Id)
             {
+                // 1. Criamos a mensagem de aviso aqui!
+                TempData["AvisoAdmin"] = "Você não pode remover seus próprios privilégios de Administrador.";
                 return RedirectToAction("Index");
             }
+
+            // ... (o resto do código do RoleManager e de trocar as Roles continua igualzinho aqui para baixo) ...
+            // =========================================================
+            // 3. A MÁGICA: Cria as Roles no banco se elas não existirem
+            // =========================================================
+            if (!await _roleManager.RoleExistsAsync("Admin"))
+            {
+                await _roleManager.CreateAsync(new IdentityRole("Admin"));
+            }
+            if (!await _roleManager.RoleExistsAsync("Cliente"))
+            {
+                await _roleManager.CreateAsync(new IdentityRole("Cliente"));
+            }
+            // =========================================================
 
             var roles = await _userManager.GetRolesAsync(user);
 
             if (roles.Contains("Admin"))
             {
                 await _userManager.RemoveFromRoleAsync(user, "Admin");
-                await _userManager.AddToRoleAsync(user, "Paciente");
+                await _userManager.AddToRoleAsync(user, "Cliente");
             }
             else
             {
-                await _userManager.RemoveFromRoleAsync(user, "Paciente");
+                await _userManager.RemoveFromRoleAsync(user, "Cliente");
                 await _userManager.AddToRoleAsync(user, "Admin");
             }
 

@@ -1,59 +1,91 @@
 ﻿@model List<Chamado>
 
-<div class="container mt-4">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
+<div class="container mt-4 mb-5">
+
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb bg-white px-3 py-2 rounded-pill shadow-sm d-inline-flex">
             <li class="breadcrumb-item">
-                <a asp-controller="Home" asp-action="Index">Home</a>
+                <a asp-controller="Home" asp-action="Index" class="text-decoration-none text-secondary">
+                    <i class="bi bi-house-door me-1"></i>Home
+                </a>
             </li>
+            <li class="breadcrumb-item active text-dark fw-medium" aria-current="page">Meus Chamados</li>
         </ol>
     </nav>
-    
-    <h2>Meus Chamados</h2>
 
-    <a href="/Chamados/Create" class="btn btn-success mb-3">Novo Chamado</a>
-    
-    <table class="table table-hover align-middle">
-        <thead class="table-light">
-        <tr>
-            <th>#</th>
-            <th>Título</th>
-            <th>Status</th>
-            <th>Categoria</th>
-            <th>Data</th>
-            <th></th>
-        </tr>
-        </thead>
-        
-        <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>#@item.Id</td>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <h2 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-person-lines-fill text-primary me-2"></i>Meus Chamados
+        </h2>
 
-                <td>@item.Titulo</td>
+        <a asp-action="Create" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i> Abrir Novo Chamado
+        </a>
+    </div>
 
-                <td>
-                    <span class="badge 
-                            @(item.Status == StatusChamado.Aberto ? "bg-secondary" :
-                            item.Status == StatusChamado.EmAndamento ? "bg-warning text-dark" :
-                            "bg-success")">
-                        @Html.DisplayFor(m => item.Status)
-                    </span>
-                </td>
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 bg-white shadow-sm rounded-4 border-0 mt-4">
+            <i class="bi bi-emoji-smile text-muted" style="font-size: 3rem;"></i>
+            <h4 class="mt-3 fw-bold text-dark">Tudo tranquilo por aqui!</h4>
+            <p class="text-muted">Você ainda não abriu nenhuma solicitação de suporte.</p>
+            <a asp-action="Create" class="btn btn-outline-primary mt-2 rounded-pill px-4">
+                Criar meu primeiro chamado
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-muted">
+                        <tr>
+                            <th class="ps-4 fw-medium border-0">#</th>
+                            <th class="fw-medium border-0">Título</th>
+                            <th class="fw-medium border-0">Status</th>
+                            <th class="fw-medium border-0">Categoria</th>
+                            <th class="fw-medium border-0">Data de Abertura</th>
+                            <th class="pe-4 border-0 text-end">Ação</th>
+                        </tr>
+                    </thead>
 
-                <td>@Html.DisplayFor(m => item.Categoria)</td>
+                    <tbody class="border-top-0">
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4 text-muted fw-medium">#@item.Id</td>
 
-                <td>@item.DataCriacao.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="fw-bold text-dark">@item.Titulo</td>
 
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.Id"
-                       class="btn btn-sm btn-primary">
-                        Ver
-                    </a>
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
+                                <td>
+                                    <span class="badge rounded-pill px-3 py-2 shadow-sm
+                                        @(item.Status == StatusChamado.Aberto ? "bg-secondary text-white" :
+                                          item.Status == StatusChamado.EmAndamento ? "bg-warning text-dark" :
+                                          "bg-success text-white")">
+                                        @Html.DisplayFor(m => item.Status)
+                                    </span>
+                                </td>
+
+                                <td class="text-secondary">
+                                    <i class="bi bi-tag text-muted me-1"></i> @Html.DisplayFor(m => item.Categoria)
+                                </td>
+
+                                <td class="text-secondary">
+                                    <i class="bi bi-calendar3 text-muted me-1"></i> @item.DataCriacao.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+
+                                <td class="pe-4 text-end">
+                                    <a asp-action="Details" asp-route-id="@item.Id"
+                                       class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-medium">
+                                        <i class="bi bi-eye me-1"></i>Ver
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
 </div>

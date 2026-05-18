@@ -1,86 +1,130 @@
-﻿@if (!User.Identity.IsAuthenticated)
+﻿@using Microsoft.AspNetCore.Identity
+@* Troque 'ApplicationUser' se o nome da sua classe de usuário for outro (ex: IdentityUser) *@
+@inject UserManager<ApplicationUser> UserManager
+
+@if (!User.Identity.IsAuthenticated)
+
 {
-    <div class="container text-center mt-5">
+    <div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+        <div class="card shadow-lg border-0 p-5 text-center" style="max-width: 650px; border-radius: 20px;">
+            <div class="mb-4">
+                <i class="bi bi-headset text-primary" style="font-size: 4.5rem;"></i>
+            </div>
+            <h1 class="mb-3 fw-bold text-dark">Grupo HSTI Ltda</h1>
+            <p class="lead text-muted mb-4 px-md-4">
+                Gerencie solicitações e suporte de forma simples, inteligente e eficiente.
+            </p>
 
-        <h1 class="mb-3">Sistema de chamados</h1>
-
-        <p class="lead mb-4">
-            Gerencie solicitações e suporte de forma simples e eficiente.
-            <br>
-            Abra, acompanhe e resolva chamados com organização e agilidade.
-        </p>
-
-        <a href="/Identity/Account/Login" class="btn btn-primary me-2">
-            Entrar
-        </a>
-
-        <a href="/Identity/Account/Register" class="btn btn-outline-primary">
-            Criar conta
-        </a>
-
-        <p class="text-muted mt-4">
-            Projeto Integrador desenvolvido para a UNIVESP, com foco em desenvolvimento web e gestão de chamados.
-        </p>
-
+            <div class="d-flex flex-wrap justify-content-center gap-3 gap-md-4 mb-5 fw-medium text-secondary">
+                <span class="d-flex align-items-center bg-light px-3 py-2 rounded-pill shadow-sm" style="font-size: 0.9rem; cursor: default; user-select: none;">
+                    <i class="bi bi-plus-circle-fill text-primary me-2"></i> Abra
+                </span>
+                <span class="d-flex align-items-center bg-light px-3 py-2 rounded-pill shadow-sm" style="font-size: 0.9rem; cursor: default; user-select: none;">
+                    <i class="bi bi-search text-primary me-2"></i> Acompanhe
+                </span>
+                <span class="d-flex align-items-center bg-light px-3 py-2 rounded-pill shadow-sm" style="font-size: 0.9rem; cursor: default; user-select: none;">
+                    <i class="bi bi-check-circle-fill text-primary me-2"></i> Resolva
+                </span>
+            </div>
+            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-outline-primary btn-lg px-5 rounded-pill shadow-sm fw-bold">
+                    Entrar
+                </a>
+                <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-outline-primary btn-lg px-5 rounded-pill fw-bold">
+                    Criar conta
+                </a>
+            </div>
+        </div>
     </div>
-} 
+}
 else
 {
-    <div class="container mt-4">
+    <div class="container mt-4 mb-5">
 
-        <h2>Bem-vindo, @User.Identity.Name!</h2>
-        <p class="text-muted">
-            Aqui você pode abrir e acompanhar os seus chamados.
+    @{
+        // Busca o usuário completo no banco de dados usando a sessão atual
+        var usuarioAtual = await UserManager.GetUserAsync(User);
+
+        // Se ele achar o usuário, pega o FirstName. Se der algum erro bizarro, escreve "Usuário"
+        var nomeExibicao = usuarioAtual?.FirstName ?? "Usuário";
+    }
+
+    <div class="mb-5 text-center text-md-start">
+        <h2 class="fw-bold text-dark mb-2">Olá, @nomeExibicao! 👋</h2>
+        <p class="text-muted fs-5">
+            Bem-vindo ao portal de suporte. Escolha uma das opções abaixo para começar.
         </p>
+    </div>
 
         <div class="row g-4">
 
-            <div class="col-md-4">
-                <div class="card shadow h-100 text-center p-3">
-                    <h5>Abrir Chamado</h5>
-                    <p>Criar uma nova solicitação</p>
-                    <a href="/Chamados/Create" class="btn btn-primary">Abrir</a>
+            <div class="col-md-6 col-lg-3">
+                <div class="card dashboard-card h-100 text-center p-4 border-0 shadow-sm rounded-4">
+                    <div class="mb-3">
+                        <i class="bi bi-plus-circle-fill text-primary" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">Abrir Chamado</h5>
+                    <p class="text-muted small mb-4 flex-grow-1">Criar uma nova solicitação de suporte técnico.</p>
+                    <a asp-controller="Chamados" asp-action="Create" class="btn btn-primary rounded-pill w-100 fw-medium shadow-sm">
+                        Abrir
+                    </a>
                 </div>
             </div>
 
-            <div class="col-md-4">
-                <div class="card shadow h-100 text-center p-3">
-                    <h5>Meus Chamados</h5>
-                    <p>Visualizar seus chamados</p>
-                    <a href="/Chamados" class="btn btn-success">Ver</a>
+            <div class="col-md-6 col-lg-3">
+                <div class="card dashboard-card h-100 text-center p-4 border-0 shadow-sm rounded-4">
+                    <div class="mb-3">
+                        <i class="bi bi-card-list text-success" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">Meus Chamados</h5>
+                    <p class="text-muted small mb-4 flex-grow-1">Acompanhar o status das suas solicitações.</p>
+                    <a asp-controller="Chamados" asp-action="Index" class="btn btn-success rounded-pill w-100 fw-medium shadow-sm">
+                        Ver
+                    </a>
                 </div>
             </div>
-            
+
             @if (User.IsInRole("Admin"))
             {
-                <div class="col-md-4">
-                    <div class="card shadow-sm p-3">
-                        <h5>Backlog</h5>
-                        <p>Gerenciar todos os chamados do sistema</p>
-                        <a asp-controller="Chamados" asp-action="Backlog" class="btn btn-warning">
+                <div class="col-md-6 col-lg-3">
+                    <div class="card dashboard-card h-100 text-center p-4 border-0 shadow-sm rounded-4">
+                        <div class="mb-3">
+                            <i class="bi bi-inbox-fill text-warning" style="font-size: 3rem;"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark">Backlog</h5>
+                        <p class="text-muted small mb-4 flex-grow-1">Fila geral de atendimento do sistema.</p>
+                        <a asp-controller="Chamados" asp-action="Backlog" class="btn btn-warning rounded-pill w-100 fw-medium shadow-sm">
                             Acessar
                         </a>
                     </div>
                 </div>
-                
-                <div class="col-md-4">
-                    <div class="card shadow h-100 text-center p-3">
-                        <h5>Administração</h5>
-                        <p>Gerenciar usuários</p>
-                        <a href="/Admin" class="btn btn-dark">Acessar</a>
+
+                <div class="col-md-6 col-lg-3">
+                    <div class="card dashboard-card h-100 text-center p-4 border-0 shadow-sm rounded-4">
+                        <div class="mb-3">
+                            <i class="bi bi-people-fill text-dark" style="font-size: 3rem;"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark">Administração</h5>
+                        <p class="text-muted small mb-4 flex-grow-1">Gerenciar os níveis de acesso dos usuários.</p>
+                        <a asp-controller="Admin" asp-action="Index" class="btn btn-dark rounded-pill w-100 fw-medium shadow-sm">
+                            Acessar
+                        </a>
                     </div>
                 </div>
             }
 
         </div>
-
     </div>
 }
 
 <style>
-    .card:hover {
-        transform: scale(1.02);
-        transition: 0.2s;
-        cursor: pointer;
+    /* Otimizando o efeito Hover que você sugeriu */
+    .dashboard-card {
+        transition: all 0.3s ease-in-out;
     }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px); /* Em vez de só aumentar, ele "flutua" para cima */
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important; /* A sombra fica mais forte */
+        }
 </style>

@@ -1,77 +1,78 @@
 ﻿@page
 @model LoginModel
-
-<style>
-.auth-container {
-    height: 70vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+@{
+    ViewData["Title"] = "Entrar";
 }
 
-.auth-card {
-    background: white;
-    padding: 35px;
-    border-radius: 12px;
-    width: 400px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
+<div class="d-flex justify-content-center align-items-center py-5" style="min-height: 75vh;">
+    <div class="card shadow-sm border-0 rounded-4 w-100" style="max-width: 450px;">
+        <div class="card-body p-4 p-md-5">
 
-.auth-card h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    font-weight: bold;
-}
+            <div class="text-center mb-5">
+                <i class="bi bi-shield-lock-fill text-primary" style="font-size: 3.5rem;"></i>
+                <h2 class="fw-bold text-dark mt-2">Bem-vindo de volta</h2>
+                <p class="text-muted small">Faça login para acessar o portal de suporte.</p>
+            </div>
 
-.form-control {
-    border-radius: 8px;
-}
-
-.btn-primary {
-    border-radius: 8px;
-}
-</style>
-
-<h1>@ViewData["Title"]</h1>
-<div class="auth-container">
-    <div class="auth-card">
-        <section>
             <form id="account" method="post">
-                <h2>Login.</h2>
-                <hr />
-                <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com"/>
-                    <label asp-for="Input.Email" class="form-label">Email</label>
-                    <span asp-validation-for="Input.Email" class="text-danger"></span>
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-4 text-center small" role="alert"></div>
+
+                <div class="form-floating mb-4">
+                    <input asp-for="Input.Email" type="email" class="form-control bg-light border-0" autocomplete="username" aria-required="true" placeholder="nome@exemplo.com" />
+                    <label>E-mail</label>
+                    <span asp-validation-for="Input.Email" class="text-danger small mt-1 d-block"></span>
                 </div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password"/>
-                    <label asp-for="Input.Password" class="form-label">Password</label>
-                    <span asp-validation-for="Input.Password" class="text-danger"></span>
+
+                <div class="input-group mb-4">
+                    <div class="form-floating flex-grow-1">
+                        <input asp-for="Input.Password" type="password" id="campoSenhaLogin" class="form-control bg-light border-0" autocomplete="current-password" aria-required="true" placeholder="Senha" />
+                        <label>Senha</label>
+                    </div>
+                    <button type="button" class="btn bg-light text-muted border-0 px-3" onclick="alternarSenha('campoSenhaLogin', this)">
+                        <i class="bi bi-eye"></i>
+                    </button>
                 </div>
-                <div class="checkbox mb-3">
-                    <label asp-for="Input.RememberMe" class="form-label">
-                        <input class="form-check-input" asp-for="Input.RememberMe"/>
-                        @Html.DisplayNameFor(m => m.Input.RememberMe)
+                <span asp-validation-for="Input.Password" class="text-danger small d-block mb-3" style="margin-top: -15px;"></span>
+
+                <div class="form-check mb-4">
+                    <input class="form-check-input shadow-sm" asp-for="Input.RememberMe" />
+                    <label class="form-check-label text-muted small" asp-for="Input.RememberMe">
+                        Lembrar de mim
                     </label>
                 </div>
-                <div>
-                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-                </div>
-                <div>
-                    @*<p>
-                        <a id="forgot-password" asp-page="./ForgotPassword">Forgot your password?</a>
-                    </p>*@
-                    <p>
-                        <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Crie uma nova conta.</a>
+
+                <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary rounded-pill fw-bold shadow-sm mt-2">
+                    Entrar
+                </button>
+
+                <div class="text-center mt-5">
+                    <p class="text-muted small mb-0">
+                        Ainda não tem uma conta?
+                        <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl" class="text-primary text-decoration-none fw-bold">Crie uma aqui</a>
                     </p>
                 </div>
             </form>
-        </section>
+
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        function alternarSenha(inputId, botao) {
+            var input = document.getElementById(inputId);
+
+            if (input.type === "password") {
+                input.type = "text";
+                // Coloca o ícone de olho cortado
+                botao.innerHTML = '<i class="bi bi-eye-slash"></i>';
+            } else {
+                input.type = "password";
+                // Volta para o ícone de olho normal
+                botao.innerHTML = '<i class="bi bi-eye"></i>';
+            }
+        }
+    </script>
 }

@@ -1,79 +1,113 @@
 ﻿@page
 @model RegisterModel
-
-<style>
-.auth-container {
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+@{
+    ViewData["Title"] = "Criar Conta";
 }
 
-.auth-card {
-    background: white;
-    padding: 35px;
-    border-radius: 12px;
-    width: 400px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
+<div class="d-flex justify-content-center align-items-center mb-5" style="min-height: 75vh; margin-top: 2rem;">
+    <div class="card shadow-sm border-0 rounded-4 w-100" style="max-width: 450px;">
 
-.auth-card h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    font-weight: bold;
-}
+        <div class="card-body px-4 px-md-5 py-5">
 
-.form-control {
-    border-radius: 8px;
-}
-
-.btn-primary {
-    border-radius: 8px;
-}
-</style>
-
-<h1>@ViewData["Title"]</h1>
-
-<div class="auth-container">
-    <div class="auth-card">
-        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <h2>Crie uma conta.</h2>
-            <hr />
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.FirstName" class="form-control" placeholder="First Name" />
-                <label>First Name</label>
-            </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.LastName" class="form-control" placeholder="Last Name" />
-                <label>Last Name</label>
+            <div class="text-center mb-5">
+                <i class="bi bi-person-plus-fill text-primary" style="font-size: 3.5rem;"></i>
+                <h2 class="fw-bold text-dark mt-2">Criar uma conta</h2>
+                <p class="text-muted small">Preencha os dados abaixo para acessar o portal de suporte da HSTI Ltda.</p>
             </div>
 
-            <div class="form-floating mb-3">
-                <input asp-for="Input.DocumentNumber" class="form-control" placeholder="CPF ou CNPJ" />
-                <label>CPF ou CNPJ</label>
+            <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-4 text-center small" role="alert"></div>
+                <div class="row g-2 mb-4">
+                    <div class="col-md-6 form-floating">
+                        <input asp-for="Input.FirstName" class="form-control bg-light border-0" autocomplete="given-name" aria-required="true" placeholder="Nome" required />
+                        <label class="ps-4">Nome</label>
+                        <span asp-validation-for="Input.FirstName" class="text-danger small mt-1 d-block"></span>
+                    </div>
+                    <div class="col-md-6 form-floating">
+                        <input asp-for="Input.LastName" class="form-control bg-light border-0" autocomplete="family-name" aria-required="true" placeholder="Sobrenome" required />
+                        <label class="ps-4">Sobrenome</label>
+                        <span asp-validation-for="Input.LastName" class="text-danger small mt-1 d-block"></span>
+                    </div>
+                </div>
+
+                <div class="form-floating mb-4">
+                    <input asp-for="Input.DocumentNumber" id="campoDocumento" class="form-control bg-light border-0" placeholder="CPF ou CNPJ" />
+                    <label>CPF ou CNPJ</label>
+                    <span asp-validation-for="Input.DocumentNumber" class="text-danger small mt-1 d-block"></span>
+                </div>
+
+                <div class="form-floating mb-4">
+                    <input asp-for="Input.Email" type="email" class="form-control bg-light border-0" autocomplete="username" aria-required="true" placeholder="nome@exemplo.com" />
+                    <label>E-mail</label>
+                    <span asp-validation-for="Input.Email" class="text-danger small mt-1 d-block"></span>
+                </div>
+
+                <div class="input-group mb-4">
+                    <div class="form-floating flex-grow-1">
+                        <input asp-for="Input.Password" type="password" id="campoSenha" class="form-control bg-light border-0" autocomplete="new-password" aria-required="true" placeholder="Senha" />
+                        <label>Senha</label>
+                    </div>
+                    <button type="button" class="btn bg-light text-muted border-0 px-3" onclick="alternarSenha('campoSenha', this)">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+                <span asp-validation-for="Input.Password" class="text-danger small d-block mb-4" style="margin-top: -15px;"></span>
+
+                <div class="input-group mb-4">
+                    <div class="form-floating flex-grow-1">
+                        <input asp-for="Input.ConfirmPassword" type="password" id="campoConfirmarSenha" class="form-control bg-light border-0" autocomplete="new-password" aria-required="true" placeholder="Confirmar Senha" />
+                        <label>Confirmar Senha</label>
+                    </div>
+                    <button type="button" class="btn bg-light text-muted border-0 px-3" onclick="alternarSenha('campoConfirmarSenha', this)">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+                <span asp-validation-for="Input.ConfirmPassword" class="text-danger small d-block mb-4" style="margin-top: -15px;"></span>
+
+                <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary rounded-pill fw-bold shadow-sm mt-2">
+                    Criar Conta
+                </button>
+            </form>
+
+            <div class="text-center mt-5">
+                <p class="text-muted small mb-0">
+                    Já tem uma conta?
+                    <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl" class="text-primary text-decoration-none fw-bold">Faça login aqui</a>
+                </p>
             </div>
-            
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label asp-for="Input.Email">Email</label>
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
-            </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.Password">Password</label>
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
-            </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.ConfirmPassword">Confirm Password</label>
-                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
-            </div>
-            <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-        </form>
+
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function () {
+            var regraCpfCnpj = function (val) {
+                return val.replace(/\D/g, '').length === 14 ? '00.000.000/0000-00' : '000.000.000-009';
+            };
+
+            var opcoesMascara = {
+                onKeyPress: function (val, e, field, options) {
+                    field.mask(regraCpfCnpj.apply({}, arguments), options);
+                }
+            };
+
+            $('#campoDocumento').mask(regraCpfCnpj, opcoesMascara);
+        });
+
+        function alternarSenha(inputId, botao) {
+            var input = document.getElementById(inputId);
+
+            if (input.type === "password") {
+                input.type = "text";
+                botao.innerHTML = '<i class="bi bi-eye-slash"></i>';
+            } else {
+                input.type = "password";
+                botao.innerHTML = '<i class="bi bi-eye"></i>';
+            }
+        }
+    </script>
 }

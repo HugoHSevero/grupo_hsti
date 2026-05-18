@@ -11,10 +11,10 @@ namespace Agendamentos.Controllers
             return Content("Área do ADMIN");
         }
 
-        [Authorize(Roles = "Paciente")]
+        [Authorize(Roles = "Cliente")]
         public IActionResult PacienteArea()
         {
-            return Content("Área do PACIENTE");
+            return Content("Área do CLIENTE");
         }
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Agendamentos.Data;
+// (Se houver outros usings de Models, mantenha-os aqui)
 
 public class ChamadosController : Controller
 {
@@ -16,14 +17,16 @@ public class ChamadosController : Controller
     public async Task<IActionResult> Index()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        
+
         var chamados = await _context.Chamados
             .Where(c => c.UsuarioId == userId)
+            // 1. ADICIONADO AQUI: Ordena os chamados do usuário do mais novo pro mais antigo
+            .OrderByDescending(c => c.DataCriacao)
             .ToListAsync();
 
         return View(chamados);
     }
-    
+
     // LISTA TODOS OS CHAMADOS
     public async Task<IActionResult> Backlog(StatusChamado? status)
     {
@@ -32,15 +35,15 @@ public class ChamadosController : Controller
 
         var chamados = _context.Chamados
             .Include(c => c.Usuario)
-            .AsQueryable();    
-        //.ToListAsync();
-        
+            .AsQueryable();
+
         if (status.HasValue)
         {
             chamados = chamados.Where(c => c.Status == status.Value);
         }
 
-        return View(await chamados.ToListAsync());
+        // 2. ADICIONADO AQUI: Ordena o resultado final do Backlog antes de mandar para a View
+        return View(await chamados.OrderByDescending(c => c.DataCriacao).ToListAsync());
     }
 
     // CREATE (GET)
@@ -64,7 +67,7 @@ public class ChamadosController : Controller
 
         return RedirectToAction("Index");
     }
-    
+
     public async Task<IActionResult> Details(int id)
     {
         var chamado = await _context.Chamados
@@ -78,7 +81,7 @@ public class ChamadosController : Controller
 
         return View(chamado);
     }
-    
+
     [HttpPost]
     public async Task<IActionResult> AlterarStatus(int id, StatusChamado status)
     {
@@ -93,7 +96,7 @@ public class ChamadosController : Controller
 
         return RedirectToAction("Details", new { id = id });
     }
-    
+
     [HttpPost]
     public async Task<IActionResult> EnviarMensagem(int chamadoId, string conteudo)
     {

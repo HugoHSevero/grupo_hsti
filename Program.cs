@@ -7,10 +7,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+if (string.IsNullOrEmpty(connectionString))
+{
+    connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+}
+
+Console.WriteLine("=== CONNECTION STRING ===");
+Console.WriteLine(connectionString);
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(
         connectionString,
-        new MySqlServerVersion(new Version(8, 0, 36))
+        ServerVersion.AutoDetect(connectionString)
     ));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -49,11 +57,16 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapRazorPages();
 
+Console.WriteLine("=== START ===");
 using (var scope = app.Services.CreateScope())
 {
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+    
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     await DbInitializer.SeedRoles(roleManager);
 }
+Console.WriteLine("=== CRIANDO DB CONTEXT ===");
 
 using (var scope = app.Services.CreateScope())
 {
@@ -94,6 +107,5 @@ using (var scope = app.Services.CreateScope())
         }
     }
 }
-
 
 app.Run();

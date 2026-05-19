@@ -78,6 +78,8 @@ public class ChamadosController : Controller
         _context.Add(chamado);
         await _context.SaveChangesAsync();
 
+        // ADICIONE ESTA LINHA AQUI (Ajuste "Baixa" para o nome que estiver no seu Enum, se for diferente)
+        chamado.Prioridade = PrioridadeChamado.Baixa;
         return RedirectToAction("Index");
     }
 

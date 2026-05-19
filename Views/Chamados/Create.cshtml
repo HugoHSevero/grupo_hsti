@@ -48,7 +48,7 @@
                 </div>
 
                 <div class="row mb-4">
-                    <div class="col-md-6 mb-3 mb-md-0">
+                    <div class="mb-4">
                         <label asp-for="Categoria" class="form-label fw-medium text-dark">
                             <i class="bi bi-tag text-muted me-1"></i> Categoria
                         </label>
@@ -58,15 +58,7 @@
                         <span asp-validation-for="Categoria" class="text-danger small mt-1 d-block"></span>
                     </div>
 
-                    <div class="col-md-6">
-                        <label asp-for="Prioridade" class="form-label fw-medium text-dark">
-                            <i class="bi bi-exclamation-triangle text-muted me-1"></i> Prioridade
-                        </label>
-                        <select asp-for="Prioridade" class="form-select form-select-lg bg-light border-0" asp-items="Html.GetEnumSelectList<PrioridadeChamado>()" required>
-                            <option value="">Selecione o nível...</option>
-                        </select>
-                        <span asp-validation-for="Prioridade" class="text-danger small mt-1 d-block"></span>
-                    </div>
+                    
                 </div>
 
                 <hr class="my-4 text-muted">

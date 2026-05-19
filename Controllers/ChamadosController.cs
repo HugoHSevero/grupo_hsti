@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Agendamentos.Data;
+// (Se houver outros usings de Models, mantenha-os aqui)
 
 public class ChamadosController : Controller
 {
@@ -16,33 +17,48 @@ public class ChamadosController : Controller
     public async Task<IActionResult> Index()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        
+
         var chamados = await _context.Chamados
             .Where(c => c.UsuarioId == userId)
+            // 1. ADICIONADO AQUI: Ordena os chamados do usuário do mais novo pro mais antigo
+            .OrderByDescending(c => c.DataCriacao)
             .ToListAsync();
 
         return View(chamados);
     }
-    
+
     // LISTA TODOS OS CHAMADOS
-    public async Task<IActionResult> Backlog(StatusChamado? status)
+    // LISTA TODOS OS CHAMADOS
+    public async Task<IActionResult> Backlog(StatusChamado? status, string search)
     {
         if (!User.IsInRole("Admin"))
             return Unauthorized();
 
         var chamados = _context.Chamados
             .Include(c => c.Usuario)
-            .AsQueryable();    
-        //.ToListAsync();
-        
+            .AsQueryable();
+
+        // Filtro 1: Status
         if (status.HasValue)
         {
             chamados = chamados.Where(c => c.Status == status.Value);
         }
 
-        return View(await chamados.ToListAsync());
-    }
+        // Filtro 2: Busca por texto (Título do chamado ou Nome/Sobrenome do usuário)
+        if (!string.IsNullOrEmpty(search))
+        {
+            chamados = chamados.Where(c =>
+                c.Titulo.Contains(search) ||
+                (c.Usuario != null && c.Usuario.FirstName.Contains(search)) ||
+                (c.Usuario != null && c.Usuario.LastName.Contains(search))
+            );
+        }
 
+        // Passamos o texto de busca para a tela para a caixinha não ficar em branco após buscar
+        ViewData["CurrentSearch"] = search;
+
+        return View(await chamados.OrderByDescending(c => c.DataCriacao).ToListAsync());
+    }
     // CREATE (GET)
     public IActionResult Create()
     {
@@ -64,7 +80,7 @@ public class ChamadosController : Controller
 
         return RedirectToAction("Index");
     }
-    
+
     public async Task<IActionResult> Details(int id)
     {
         var chamado = await _context.Chamados
@@ -78,7 +94,7 @@ public class ChamadosController : Controller
 
         return View(chamado);
     }
-    
+
     [HttpPost]
     public async Task<IActionResult> AlterarStatus(int id, StatusChamado status)
     {
@@ -93,7 +109,7 @@ public class ChamadosController : Controller
 
         return RedirectToAction("Details", new { id = id });
     }
-    
+
     [HttpPost]
     public async Task<IActionResult> EnviarMensagem(int chamadoId, string conteudo)
     {
@@ -111,5 +127,34 @@ public class ChamadosController : Controller
         await _context.SaveChangesAsync();
 
         return RedirectToAction("Details", new { id = chamadoId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Deletar(int id)
+    {
+        // Segurança máxima: Se não for Admin, barra na hora
+        if (!User.IsInRole("Admin"))
+        {
+            return Unauthorized();
+        }
+
+        var chamado = await _context.Chamados
+            .Include(c => c.Mensagens)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (chamado == null)
+            return NotFound();
+
+        // Remove as mensagens atreladas antes de apagar o chamado
+        if (chamado.Mensagens != null && chamado.Mensagens.Any())
+        {
+            _context.MensagensChamado.RemoveRange(chamado.Mensagens);
+        }
+
+        _context.Chamados.Remove(chamado);
+        await _context.SaveChangesAsync();
+
+        // Como apenas admin apaga, sempre redireciona para o Backlog
+        return RedirectToAction("Backlog");
     }
 }

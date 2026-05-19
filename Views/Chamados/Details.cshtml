@@ -1,106 +1,209 @@
 ﻿@model Chamado
 @using System.Security.Claims
 
-<div class="container mt-4">
-    
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
+<div class="container mt-4 mb-5">
+
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb bg-white px-3 py-2 rounded-pill shadow-sm d-inline-flex">
             <li class="breadcrumb-item">
-                <a asp-controller="Home" asp-action="Index">Home</a>
+                <a asp-controller="Home" asp-action="Index" class="text-decoration-none text-secondary">
+                    <i class="bi bi-house-door me-1"></i>Home
+                </a>
             </li>
             @if (User.IsInRole("Admin"))
             {
                 <li class="breadcrumb-item">
-                    <a asp-controller="Chamados" asp-action="Backlog">Backlog</a>
+                    <a asp-controller="Chamados" asp-action="Backlog" class="text-decoration-none text-secondary">Backlog</a>
                 </li>
             }
             else
             {
                 <li class="breadcrumb-item">
-                    <a asp-controller="Chamados" asp-action="Index">Meus Chamados</a>
+                    <a asp-controller="Chamados" asp-action="Index" class="text-decoration-none text-secondary">Meus Chamados</a>
                 </li>
             }
-            <li class="breadcrumb-item active">
-                Chamado #@Model.Id
-            </li>
+            <li class="breadcrumb-item active text-dark fw-medium">Chamado #@Model.Id</li>
         </ol>
     </nav>
-    
-    <h2>Detalhes de Chamados</h2>
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <h3 class="mb-1">#@Model.Id - @Model.Titulo</h3>
-                    <span class="badge 
-                        @(Model.Status == StatusChamado.Aberto ? "bg-secondary" :
-                          Model.Status == StatusChamado.EmAndamento ? "bg-warning text-dark" :
-                          "bg-success")">
-                        @Html.DisplayFor(m => m.Status)
-                    </span>
+    <div class="mb-4 d-flex align-items-center">
+        <h2 class="mb-0 fw-bold text-dark me-3">
+            #@Model.Id - @Model.Titulo
+        </h2>
+        <span class="badge rounded-pill px-3 py-2 shadow-sm
+            @(Model.Status == StatusChamado.Aberto ? "bg-secondary text-white" :
+                    Model.Status == StatusChamado.EmAndamento ? "bg-warning text-dark" :
+                    "bg-success text-white")">
+            @Html.DisplayFor(m => Model.Status)
+        </span>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-lg-8">
+
+            <div class="card shadow-sm border-0 rounded-4 mb-4">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
+                    <h5 class="fw-bold text-dark"><i class="bi bi-card-text text-primary me-2"></i>Descrição do Problema</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="fs-6 text-secondary mb-0" style="white-space: pre-line;">@Model.Descricao</p>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-white border-bottom pt-4 pb-3 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-chat-dots text-primary me-2"></i>Histórico de Mensagens</h5>
+                    <span class="badge bg-light text-secondary rounded-pill border">@Model.Mensagens.Count mensagens</span>
                 </div>
 
-                @if (User.IsInRole("Admin"))
-                {
-                    <form asp-action="AlterarStatus" method="post" class="d-flex gap-2">
-                        <input type="hidden" name="id" value="@Model.Id" />
-                        <select asp-for="Status"
-                                class="form-select form-select-sm"
-                                asp-items="Html.GetEnumSelectList<StatusChamado>()">
-                        </select>
-                        <button type="submit" class="btn btn-sm btn-warning">
-                            Atualizar
-                        </button>
+                <div class="card-body p-4 bg-light" style="max-height: 500px; overflow-y: auto;">
+
+                    @if (!Model.Mensagens.Any())
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-envelope-open" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">Nenhuma mensagem enviada ainda. Use o campo abaixo para iniciar o atendimento.</p>
+                        </div>
+                    }
+
+                    @foreach (var msg in Model.Mensagens.OrderBy(m => m.DataEnvio))
+                    {
+                        var isMe = msg.UsuarioId == User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                        <div class="d-flex mb-3 @(isMe ? "justify-content-end" : "justify-content-start")">
+                            <div class="p-3 shadow-sm
+                                @(isMe ? "bg-primary text-white" : "bg-white border text-dark")"
+                                 style="max-width: 80%; border-radius: 1rem; @(isMe ? "border-bottom-right-radius: 0;" : "border-bottom-left-radius: 0;")">
+
+                                <div class="small fw-bold mb-1 @(isMe ? "text-white-50" : "text-primary")">
+                                    @(isMe ? "Você" : msg.Usuario?.Email)
+                                </div>
+                                <div style="white-space: pre-line;">@msg.Conteudo</div>
+                                <div class="small text-end mt-2 @(isMe ? "text-white-50" : "text-muted")" style="font-size: 0.75rem;">
+                                    @msg.DataEnvio.ToString("dd/MM/yyyy HH:mm")
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="card-footer bg-white border-top-0 p-4 rounded-bottom-4">
+                    <form asp-action="EnviarMensagem" method="post">
+                        <input type="hidden" name="chamadoId" value="@Model.Id" />
+                        <div class="input-group shadow-sm">
+                            <textarea name="conteudo"
+                                      id="campoMensagem"
+                                      class="form-control border-end-0 bg-light"
+                                      placeholder="Escreva sua resposta..."
+                                      rows="2"
+                                      required></textarea>
+
+                            <button type="submit" id="btnEnviar" class="btn btn-primary px-4 fw-medium" disabled>
+                                <i class="bi bi-send-fill"></i>
+                            </button>
+                        </div>
                     </form>
-                }
-            </div>
-
-            <hr />
-
-            <p class="fs-5">@Model.Descricao</p>
-            <div class="text-muted small mt-3">
-                <div><strong>Categoria:</strong> @Model.Categoria</div>
-                <div><strong>Data:</strong> @Model.DataCriacao</div>
-                <div><strong>Usuário:</strong> @Model.Usuario?.Email</div>
+                </div>
             </div>
 
         </div>
-    </div>
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <h5 class="mb-3">Mensagens</h5>
-            @foreach (var msg in Model.Mensagens.OrderBy(m => m.DataEnvio))
-            {
-                var isMe = msg.UsuarioId == User.FindFirstValue(ClaimTypes.NameIdentifier);
-                <div class="d-flex mb-2 @(isMe ? "justify-content-end" : "justify-content-start")">
-                    <div class="p-2 rounded 
-                        @(isMe ? "bg-primary text-white" : "bg-light")"
-                         style="max-width: 70%;">
-                        <div class="small fw-bold">
-                            @msg.Usuario?.Email
-                        </div>
-                        <div>@msg.Conteudo</div>
-                        <div class="small text-muted">
-                            @msg.DataEnvio
-                        </div>
-                    </div>
-                </div>
-            }
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4">
 
-            <form asp-action="EnviarMensagem" method="post" class="mt-3">
-                <input type="hidden" name="chamadoId" value="@Model.Id" />
-                <div class="input-group">
-                    <textarea name="conteudo"
-                              class="form-control"
-                              placeholder="Digite sua mensagem..."></textarea>
-                    <button type="submit" class="btn btn-primary">
-                        Enviar
-                    </button>
+                    <h6 class="fw-bold text-dark text-uppercase mb-4" style="letter-spacing: 1px; font-size: 0.85rem;">
+                        Detalhes da Solicitação
+                    </h6>
+
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-3 pb-3 border-bottom">
+                            <span class="text-muted d-block small fw-bold text-uppercase mb-1">
+                                <i class="bi bi-person me-1"></i> Solicitante
+                            </span>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-circle fs-4 text-secondary me-2"></i>
+                                <div>
+                                    <span class="d-block text-dark fw-bold">
+                                        @(Model.Usuario != null && !string.IsNullOrEmpty(Model.Usuario.FirstName)
+                                            ? $"{Model.Usuario.FirstName} {Model.Usuario.LastName}"
+                                            : "Usuário Sem Nome")
+                                    </span>
+                                    <span class="d-block text-muted small">
+                                        @(Model.Usuario?.Email ?? "E-mail desconhecido")
+                                    </span>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="mb-3 d-flex align-items-start">
+                            <i class="bi bi-calendar3 text-muted fs-5 me-3 mt-1"></i>
+                            <div>
+                                <small class="text-muted d-block fw-semibold">Data de Abertura</small>
+                                <span class="text-dark">@Model.DataCriacao.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                        </li>
+                    </ul>
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <hr class="my-4 text-muted">
+                        <div class="bg-light p-3 rounded-3 border">
+                            <label class="form-label fw-bold text-dark small mb-2"><i class="bi bi-gear-fill text-warning me-1"></i>Ação Administrativa</label>
+                            <form asp-action="AlterarStatus" method="post" class="d-flex flex-column gap-2">
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <div class="input-group input-group-sm">
+                                    <select asp-for="Status"
+                                            class="form-select border-secondary"
+                                            asp-items="Html.GetEnumSelectList<StatusChamado>()">
+                                    </select>
+                                    <button type="submit" class="btn btn-warning fw-bold shadow-sm">
+                                        Salvar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    }
+
+                    <hr class="my-4 text-muted">
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <hr class="my-4 text-muted">
+                        <div class="pt-2">
+                            <form asp-action="Deletar" method="post"
+                                  onsubmit="return confirm('Deseja realmente apagar em definitivo este chamado e todo o histórico de conversas dele?');">
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <button type="submit" class="btn btn-outline-danger w-100 rounded-pill btn-sm fw-medium py-2">
+                                    <i class="bi bi-trash3 me-1"></i> Excluir este Chamado
+                                </button>
+                            </form>
+                        </div>
+                    }
                 </div>
-            </form>
+            </div>
         </div>
-    </div>
 
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        // Mantivemos a lógica inteligente do botão!
+        const campoMensagem = document.getElementById('campoMensagem');
+        const btnEnviar = document.getElementById('btnEnviar');
+
+        campoMensagem.addEventListener('input', function () {
+            if (campoMensagem.value.trim() === "") {
+                btnEnviar.disabled = true;
+            } else {
+                btnEnviar.disabled = false;
+            }
+        });
+
+        // Bônus: Fazer a barra de rolagem do chat sempre iniciar lá embaixo
+        const chatContainer = document.querySelector('.card-body[style*="max-height: 500px"]');
+        if (chatContainer) {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    </script>
+}

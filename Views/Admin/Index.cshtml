@@ -70,7 +70,7 @@
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
-                        @foreach (var user in Model)
+                        @foreach (var user in Model.OrderBy(u => $"{u.FirstName} {u.LastName}"))
                         {
                             <tr>
                                 <td class="ps-4">

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Agendamentos.Data;
+using System;
 // (Se houver outros usings de Models, mantenha-os aqui)
 
 public class ChamadosController : Controller
@@ -20,14 +21,12 @@ public class ChamadosController : Controller
 
         var chamados = await _context.Chamados
             .Where(c => c.UsuarioId == userId)
-            // 1. ADICIONADO AQUI: Ordena os chamados do usuário do mais novo pro mais antigo
             .OrderByDescending(c => c.DataCriacao)
             .ToListAsync();
 
         return View(chamados);
     }
 
-    // LISTA TODOS OS CHAMADOS
     // LISTA TODOS OS CHAMADOS
     public async Task<IActionResult> Backlog(StatusChamado? status, string search)
     {
@@ -59,6 +58,7 @@ public class ChamadosController : Controller
 
         return View(await chamados.OrderByDescending(c => c.DataCriacao).ToListAsync());
     }
+
     // CREATE (GET)
     public IActionResult Create()
     {
@@ -73,8 +73,8 @@ public class ChamadosController : Controller
 
         chamado.UsuarioId = userId;
         chamado.Status = StatusChamado.Aberto;
-        chamado.DataCriacao = DateTime.Now;
-
+        chamado.Prioridade = PrioridadeChamado.Baixa;
+        chamado.DataCriacao = GetHorarioBrasilia();
         _context.Add(chamado);
         await _context.SaveChangesAsync();
 
@@ -85,7 +85,7 @@ public class ChamadosController : Controller
     {
         var chamado = await _context.Chamados
             .Include(c => c.Usuario)
-            .Include(c => c.Mensagens)
+            .Include(c => c.Mensagens.OrderBy(m => m.DataEnvio))
             .ThenInclude(m => m.Usuario)
             .FirstOrDefaultAsync(c => c.Id == id);
 
@@ -119,7 +119,7 @@ public class ChamadosController : Controller
         {
             ChamadoId = chamadoId,
             Conteudo = conteudo,
-            DataEnvio = DateTime.Now,
+            DataEnvio = GetHorarioBrasilia(),
             UsuarioId = userId
         };
 
@@ -132,7 +132,6 @@ public class ChamadosController : Controller
     [HttpPost]
     public async Task<IActionResult> Deletar(int id)
     {
-        // Segurança máxima: Se não for Admin, barra na hora
         if (!User.IsInRole("Admin"))
         {
             return Unauthorized();
@@ -145,7 +144,6 @@ public class ChamadosController : Controller
         if (chamado == null)
             return NotFound();
 
-        // Remove as mensagens atreladas antes de apagar o chamado
         if (chamado.Mensagens != null && chamado.Mensagens.Any())
         {
             _context.MensagensChamado.RemoveRange(chamado.Mensagens);
@@ -154,7 +152,23 @@ public class ChamadosController : Controller
         _context.Chamados.Remove(chamado);
         await _context.SaveChangesAsync();
 
-        // Como apenas admin apaga, sempre redireciona para o Backlog
         return RedirectToAction("Backlog");
+    }
+
+    private DateTime GetHorarioBrasilia()
+    {
+        var horaGlobal = DateTime.UtcNow;
+        TimeZoneInfo fusoHorarioBrasil;
+
+        try
+        {
+            fusoHorarioBrasil = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            fusoHorarioBrasil = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+        }
+
+        return TimeZoneInfo.ConvertTimeFromUtc(horaGlobal, fusoHorarioBrasil);
     }
 }

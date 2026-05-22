@@ -72,13 +72,31 @@ public class ChamadosController : Controller
 
         chamado.UsuarioId = userId;
         chamado.Status = StatusChamado.Aberto;
-        chamado.DataCriacao = DateTime.Now;
 
+        // ATENÇÃO: Definição da prioridade ANTES de salvar no banco!
+        chamado.Prioridade = PrioridadeChamado.Baixa;
+
+        // 1. Pega a hora global neutra
+        var horaGlobal = DateTime.UtcNow;
+        TimeZoneInfo fusoHorarioBrasil;
+
+        // 2. Tenta pegar o fuso do Linux (Railway), se falhar, pega o do Windows (Seu PC local)
+        try
+        {
+            fusoHorarioBrasil = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            fusoHorarioBrasil = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+        }
+
+        // 3. Converte a hora global para a hora local do Brasil
+        chamado.DataCriacao = TimeZoneInfo.ConvertTimeFromUtc(horaGlobal, fusoHorarioBrasil);
+
+        // 4. Salva no banco de dados com a hora e a prioridade corretas
         _context.Add(chamado);
         await _context.SaveChangesAsync();
 
-        // ADICIONE ESTA LINHA AQUI (Ajuste "Baixa" para o nome que estiver no seu Enum, se for diferente)
-        chamado.Prioridade = PrioridadeChamado.Baixa;
         return RedirectToAction("Index");
     }
 
@@ -116,11 +134,28 @@ public class ChamadosController : Controller
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+        // 1. Pega a hora global neutra (Livre de fuso horário)
+        var horaGlobal = DateTime.UtcNow;
+        TimeZoneInfo fusoHorarioBrasil;
+
+        // 2. Tenta pegar o fuso do Linux (Railway), se falhar, pega o do Windows (Seu PC local)
+        try
+        {
+            fusoHorarioBrasil = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            fusoHorarioBrasil = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+        }
+
         var mensagem = new MensagemChamado
         {
             ChamadoId = chamadoId,
             Conteudo = conteudo,
-            DataEnvio = DateTime.Now,
+
+            // 3. Aplica a hora matematicamente convertida para o Brasil
+            DataEnvio = TimeZoneInfo.ConvertTimeFromUtc(horaGlobal, fusoHorarioBrasil),
+
             UsuarioId = userId
         };
 
@@ -129,7 +164,6 @@ public class ChamadosController : Controller
 
         return RedirectToAction("Details", new { id = chamadoId });
     }
-
     [HttpPost]
     public async Task<IActionResult> Deletar(int id)
     {

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Agendamentos.Data;
+using System;
 // (Se houver outros usings de Models, mantenha-os aqui)
 
 public class ChamadosController : Controller
@@ -20,7 +21,6 @@ public class ChamadosController : Controller
 
         var chamados = await _context.Chamados
             .Where(c => c.UsuarioId == userId)
-            // 1. ADICIONADO AQUI: Ordena os chamados do usuário do mais novo pro mais antigo
             .OrderByDescending(c => c.DataCriacao)
             .ToListAsync();
 
@@ -58,6 +58,7 @@ public class ChamadosController : Controller
 
         return View(await chamados.OrderBy(c => c.DataCriacao).ToListAsync());
     }
+
     // CREATE (GET)
     public IActionResult Create()
     {
@@ -72,28 +73,8 @@ public class ChamadosController : Controller
 
         chamado.UsuarioId = userId;
         chamado.Status = StatusChamado.Aberto;
-
-        // ATENÇÃO: Definição da prioridade ANTES de salvar no banco!
         chamado.Prioridade = PrioridadeChamado.Baixa;
-
-        // 1. Pega a hora global neutra
-        var horaGlobal = DateTime.UtcNow;
-        TimeZoneInfo fusoHorarioBrasil;
-
-        // 2. Tenta pegar o fuso do Linux (Railway), se falhar, pega o do Windows (Seu PC local)
-        try
-        {
-            fusoHorarioBrasil = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            fusoHorarioBrasil = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
-        }
-
-        // 3. Converte a hora global para a hora local do Brasil
-        chamado.DataCriacao = TimeZoneInfo.ConvertTimeFromUtc(horaGlobal, fusoHorarioBrasil);
-
-        // 4. Salva no banco de dados com a hora e a prioridade corretas
+        chamado.DataCriacao = GetHorarioBrasilia();
         _context.Add(chamado);
         await _context.SaveChangesAsync();
 
@@ -104,7 +85,7 @@ public class ChamadosController : Controller
     {
         var chamado = await _context.Chamados
             .Include(c => c.Usuario)
-            .Include(c => c.Mensagens)
+            .Include(c => c.Mensagens.OrderBy(m => m.DataEnvio))
             .ThenInclude(m => m.Usuario)
             .FirstOrDefaultAsync(c => c.Id == id);
 
@@ -134,28 +115,11 @@ public class ChamadosController : Controller
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // 1. Pega a hora global neutra (Livre de fuso horário)
-        var horaGlobal = DateTime.UtcNow;
-        TimeZoneInfo fusoHorarioBrasil;
-
-        // 2. Tenta pegar o fuso do Linux (Railway), se falhar, pega o do Windows (Seu PC local)
-        try
-        {
-            fusoHorarioBrasil = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            fusoHorarioBrasil = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
-        }
-
         var mensagem = new MensagemChamado
         {
             ChamadoId = chamadoId,
             Conteudo = conteudo,
-
-            // 3. Aplica a hora matematicamente convertida para o Brasil
-            DataEnvio = TimeZoneInfo.ConvertTimeFromUtc(horaGlobal, fusoHorarioBrasil),
-
+            DataEnvio = GetHorarioBrasilia(),
             UsuarioId = userId
         };
 
@@ -164,10 +128,10 @@ public class ChamadosController : Controller
 
         return RedirectToAction("Details", new { id = chamadoId });
     }
+
     [HttpPost]
     public async Task<IActionResult> Deletar(int id)
     {
-        // Segurança máxima: Se não for Admin, barra na hora
         if (!User.IsInRole("Admin"))
         {
             return Unauthorized();
@@ -180,7 +144,6 @@ public class ChamadosController : Controller
         if (chamado == null)
             return NotFound();
 
-        // Remove as mensagens atreladas antes de apagar o chamado
         if (chamado.Mensagens != null && chamado.Mensagens.Any())
         {
             _context.MensagensChamado.RemoveRange(chamado.Mensagens);
@@ -189,7 +152,23 @@ public class ChamadosController : Controller
         _context.Chamados.Remove(chamado);
         await _context.SaveChangesAsync();
 
-        // Como apenas admin apaga, sempre redireciona para o Backlog
         return RedirectToAction("Backlog");
+    }
+
+    private DateTime GetHorarioBrasilia()
+    {
+        var horaGlobal = DateTime.UtcNow;
+        TimeZoneInfo fusoHorarioBrasil;
+
+        try
+        {
+            fusoHorarioBrasil = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            fusoHorarioBrasil = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+        }
+
+        return TimeZoneInfo.ConvertTimeFromUtc(horaGlobal, fusoHorarioBrasil);
     }
 }

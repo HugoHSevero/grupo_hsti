@@ -21,7 +21,7 @@ public class ChamadosController : Controller
 
         var chamados = await _context.Chamados
             .Where(c => c.UsuarioId == userId)
-            .OrderByDescending(c => c.DataCriacao)
+            .OrderBy(c => c.DataCriacao)
             .ToListAsync();
 
         return View(chamados);
@@ -56,7 +56,7 @@ public class ChamadosController : Controller
         // Passamos o texto de busca para a tela para a caixinha não ficar em branco após buscar
         ViewData["CurrentSearch"] = search;
 
-        return View(await chamados.OrderByDescending(c => c.DataCriacao).ToListAsync());
+        return View(await chamados.OrderBy(c => c.DataCriacao).ToListAsync());
     }
 
     // CREATE (GET)
